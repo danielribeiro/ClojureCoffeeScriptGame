@@ -1,0 +1,14 @@
+/nbproject/
+pkg
+db
+.hg
+
+## EMACS
+*~
+\#*
+.\#*
+
+## Build
+*.gem
+
+fixtures/output.mcr
