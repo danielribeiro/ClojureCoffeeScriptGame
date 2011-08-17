@@ -16,20 +16,31 @@ createFixture = (shape) ->
     f = new b2FixtureDef
     f.density = 3.0
     f.friction = .3
-    f.restitution = .7
+    f.restitution = 1.1 # FIXME: do not use this, use .7
     f.shape = shape if shape?
     f.filter.groupIndex = 1
     return f
 
 createBody = (x, y) ->
     b = new b2BodyDef
-    b.linearDamping = 0.05
-    b.angularDamping = 0.1
     b.position.Set x, y if x? and y?
     b.type = b2Body.b2_dynamicBody
     return b
 
+ContactListenerHandler =
+    PreSolve: (contact, manifold) ->
+        return unless contact.IsTouching()
+        x = contact.GetFixtureA().GetBody()
+        y = contact.GetFixtureB().GetBody()
+        if "ceiling" in [x.GetUserData(), y.GetUserData()]
+            @gameOver = true
+
+    PostSolve: -> return
+    BeginContact: -> return
+    EndContact: -> return
+
 class Game
+    mixin @, ContactListenerHandler
     scale: 30.0
 
     constructor: (@canvas) ->
@@ -37,6 +48,8 @@ class Game
         @centerY = global.H / (2 * @scale)
         @toDestroy = []
         @world = null
+        @paused = false
+        @gameOver = false
 
     destroyElements: ->
         for b in @toDestroy
@@ -56,6 +69,9 @@ class Game
         setInterval((=> @tick()), 1000 / 30)
 
     tick: ->
+        if @gameOver
+            @paused = true
+        return if @paused
         @destroyElements()
         @maybeCreateElement()
         @world.Step(1 / 30, 10, 10)
@@ -80,13 +96,14 @@ class Game
         @boxAt [2, 2], [3, 3]
         @boxAt [.5, .5], [6, 6]
         @triangleAt [15, 5]
+        @world.SetContactListener @
         return
 
     buildWalls: ->
         w = W / (2 * @scale)
         h = H / (2 * @scale)
         dim = 200 / @scale
-        @wall [w, dim], [w, -dim]
+        @wall [w, dim], [w, -dim], 'ceiling'
         @wall [w, dim], [w, 2 * h + dim]
         @wall [dim, h], [-dim, h]
         @wall [dim, h], [2 * w + dim, h]
@@ -110,10 +127,11 @@ class Game
         @create bodyDef, fixDef
 
 
-    wall: (dimensions, position) ->
+    wall: (dimensions, position, userData) ->
         fixDef = createFixture(new b2PolygonShape())
         fixDef.shape.SetAsBox dimensions...
         bodyDef = createBody(position...)
+        bodyDef.userData = userData
         bodyDef.type = b2Body.b2_staticBody
         @create bodyDef, fixDef
 

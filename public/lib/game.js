@@ -1,4 +1,4 @@
-var Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2MassData, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, v, _ref, _ref2;
+var ContactListenerHandler, Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2MassData, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, v, _ref, _ref2;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 global = window;
 b2Vec2 = Box2D.Common.Math.b2Vec2;
@@ -20,7 +20,7 @@ createFixture = function(shape) {
   f = new b2FixtureDef;
   f.density = 3.0;
   f.friction = .3;
-  f.restitution = .7;
+  f.restitution = 1.1;
   if (shape != null) {
     f.shape = shape;
   }
@@ -30,15 +30,30 @@ createFixture = function(shape) {
 createBody = function(x, y) {
   var b;
   b = new b2BodyDef;
-  b.linearDamping = 0.05;
-  b.angularDamping = 0.1;
   if ((x != null) && (y != null)) {
     b.position.Set(x, y);
   }
   b.type = b2Body.b2_dynamicBody;
   return b;
 };
+ContactListenerHandler = {
+  PreSolve: function(contact, manifold) {
+    var x, y;
+    if (!contact.IsTouching()) {
+      return;
+    }
+    x = contact.GetFixtureA().GetBody();
+    y = contact.GetFixtureB().GetBody();
+    if ("ceiling" === x.GetUserData() || "ceiling" === y.GetUserData()) {
+      return this.gameOver = true;
+    }
+  },
+  PostSolve: function() {},
+  BeginContact: function() {},
+  EndContact: function() {}
+};
 Game = (function() {
+  mixin(Game, ContactListenerHandler);
   Game.prototype.scale = 30.0;
   function Game(canvas) {
     this.canvas = canvas;
@@ -46,6 +61,8 @@ Game = (function() {
     this.centerY = global.H / (2 * this.scale);
     this.toDestroy = [];
     this.world = null;
+    this.paused = false;
+    this.gameOver = false;
   }
   Game.prototype.destroyElements = function() {
     var b, data, _i, _len, _ref3;
@@ -72,6 +89,12 @@ Game = (function() {
     }, this)), 1000 / 30);
   };
   Game.prototype.tick = function() {
+    if (this.gameOver) {
+      this.paused = true;
+    }
+    if (this.paused) {
+      return;
+    }
     this.destroyElements();
     this.maybeCreateElement();
     this.world.Step(1 / 30, 10, 10);
@@ -101,13 +124,14 @@ Game = (function() {
     this.boxAt([2, 2], [3, 3]);
     this.boxAt([.5, .5], [6, 6]);
     this.triangleAt([15, 5]);
+    this.world.SetContactListener(this);
   };
   Game.prototype.buildWalls = function() {
     var dim, h, w;
     w = W / (2 * this.scale);
     h = H / (2 * this.scale);
     dim = 200 / this.scale;
-    this.wall([w, dim], [w, -dim]);
+    this.wall([w, dim], [w, -dim], 'ceiling');
     this.wall([w, dim], [w, 2 * h + dim]);
     this.wall([dim, h], [-dim, h]);
     return this.wall([dim, h], [2 * w + dim, h]);
@@ -131,11 +155,12 @@ Game = (function() {
     (_ref3 = fixDef.shape).SetAsBox.apply(_ref3, dimensions);
     return this.create(bodyDef, fixDef);
   };
-  Game.prototype.wall = function(dimensions, position) {
+  Game.prototype.wall = function(dimensions, position, userData) {
     var bodyDef, fixDef, _ref3;
     fixDef = createFixture(new b2PolygonShape());
     (_ref3 = fixDef.shape).SetAsBox.apply(_ref3, dimensions);
     bodyDef = createBody.apply(null, position);
+    bodyDef.userData = userData;
     bodyDef.type = b2Body.b2_staticBody;
     return this.create(bodyDef, fixDef);
   };
