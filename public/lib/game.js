@@ -59,17 +59,50 @@ Game = (function() {
     this.canvas = canvas;
     this.centerX = global.W / (2 * this.scale);
     this.centerY = global.H / (2 * this.scale);
-    this.toDestroy = [];
     this.world = null;
+    this.init();
+  }
+  Game.prototype.init = function() {
+    this.toDestroy = [];
     this.paused = false;
     this.gameOver = false;
-  }
+    return this.score = 0;
+  };
+  Game.prototype.restart = function() {
+    this.init();
+    this.cleanUpWorld();
+    this._updateScore();
+    return this._updatePauseText();
+  };
+  Game.prototype.cleanUpWorld = function() {
+    return this.each(__bind(function(b) {
+      if (b.GetType() !== b2Body.b2_staticBody) {
+        return this.world.DestroyBody(b);
+      }
+    }, this));
+  };
+  Game.prototype.each = function(f) {
+    var body;
+    body = this.world.GetBodyList();
+    while (body) {
+      f(body);
+      body = body.GetNext();
+    }
+  };
+  Game.prototype.incrementScore = function() {
+    this.score++;
+    return this._updateScore();
+  };
+  Game.prototype._updateScore = function() {
+    return $('#scoreValue').text(this.score);
+  };
   Game.prototype.destroyElements = function() {
     var b, data, _i, _len, _ref3;
     _ref3 = this.toDestroy;
     for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
       b = _ref3[_i];
       data = b.GetUserData();
+      this.incrementScore();
       this.world.DestroyBody(b);
     }
     return this.toDestroy = [];
@@ -89,13 +122,15 @@ Game = (function() {
     }, this)), 1000 / 30);
   };
   Game.prototype.tick = function() {
-    if (this.gameOver) {
+    if (this.gameOver && !this.paused) {
       this.paused = true;
+      alert("Game is over...");
     }
     if (this.paused) {
       return;
     }
     this.destroyElements();
+    this.incrementScore();
     this.maybeCreateElement();
     this.world.Step(1 / 30, 10, 10);
     this.world.DrawDebugData();
@@ -195,16 +230,30 @@ Game = (function() {
   Game.prototype.onClick = function(x, y) {
     return this.deleteAt(x / this.scale, y / this.scale);
   };
+  Game.prototype.togglePause = function() {
+    this.paused = !this.paused;
+    return this._updatePauseText();
+  };
+  Game.prototype._updatePauseText = function() {
+    return $('#pause').text(this.paused ? "Unpause" : "Pause");
+  };
   return Game;
 })();
 init_web_app = function() {
   var canvas, game;
   canvas = getCanvas();
   game = new Game(canvas);
-  $('#canvas').click(function(e) {
+  $('#pause').click(function() {
+    return game.togglePause();
+  });
+  $('#restart').click(function() {
+    return game.restart();
+  });
+  $('#canvas').mousedown(function(e) {
     var o;
     o = $(this).offset();
-    return game.onClick(e.pageX - o.left, e.pageY - o.top);
+    game.onClick(e.pageX - o.left, e.pageY - o.top);
+    return false;
   });
   return game.animateWorld();
 };

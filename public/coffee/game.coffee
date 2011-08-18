@@ -46,14 +46,43 @@ class Game
     constructor: (@canvas) ->
         @centerX = global.W / (2 * @scale)
         @centerY = global.H / (2 * @scale)
-        @toDestroy = []
         @world = null
+        @init()
+
+    init: ->
+        @toDestroy = []
         @paused = false
         @gameOver = false
+        @score = 0
+
+    restart: ->
+        @init()
+        @cleanUpWorld()
+        @_updateScore()
+        @_updatePauseText()
+
+    cleanUpWorld: ->
+        @each (b) =>
+            @world.DestroyBody b if b.GetType() isnt b2Body.b2_staticBody
+
+    each: (f) ->
+        body = @world.GetBodyList()
+        while body
+            f body
+            body = body.GetNext()
+        return
+
+
+    incrementScore: ->
+        @score++
+        @_updateScore()
+
+    _updateScore: -> $('#scoreValue').text(@score)
 
     destroyElements: ->
         for b in @toDestroy
             data = b.GetUserData()
+            @incrementScore()
             @world.DestroyBody b
         @toDestroy = []
 
@@ -69,10 +98,12 @@ class Game
         setInterval((=> @tick()), 1000 / 30)
 
     tick: ->
-        if @gameOver
+        if @gameOver and not @paused
             @paused = true
+            alert "Game is over..."
         return if @paused
         @destroyElements()
+        @incrementScore() # FIXME: use sensible defaults
         @maybeCreateElement()
         @world.Step(1 / 30, 10, 10)
         @world.DrawDebugData()
@@ -160,12 +191,22 @@ class Game
         @deleteAt x / @scale, y / @scale
 
 
+    togglePause: ->
+        @paused = not @paused
+        @_updatePauseText()
+
+    _updatePauseText: -> $('#pause').text(if @paused then "Unpause" else "Pause")
+
+
 
 init_web_app = ->
     canvas = getCanvas()
     game = new Game(canvas)
-    $('#canvas').click (e) ->
+    $('#pause').click -> game.togglePause()
+    $('#restart').click -> game.restart()
+    $('#canvas').mousedown (e) ->
         o = $(@).offset()
         game.onClick(e.pageX - o.left, e.pageY - o.top)
+        return false
     game.animateWorld()
 
