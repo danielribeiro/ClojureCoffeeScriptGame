@@ -16,7 +16,7 @@ createFixture = (shape) ->
     f = new b2FixtureDef
     f.density = 3.0
     f.friction = .3
-    f.restitution = 1.1 # FIXME: do not use this, use .7
+    f.restitution = .5 # FIXME: do not use this, use .7
     f.shape = shape if shape?
     f.filter.groupIndex = 1
     return f
@@ -42,6 +42,7 @@ ContactListenerHandler =
 class Game
     mixin @, ContactListenerHandler
     scale: 30.0
+    speedRate: 60
 
     constructor: (@canvas) ->
         @centerX = global.W / (2 * @scale)
@@ -54,11 +55,14 @@ class Game
         @paused = false
         @gameOver = false
         @score = 0
+        @speed = 0
+        @ticksToSpeed = @speedRate
 
     restart: ->
         @init()
         @cleanUpWorld()
         @_updateScore()
+        @_updateSpeed()
         @_updatePauseText()
 
     cleanUpWorld: ->
@@ -77,7 +81,12 @@ class Game
         @score++
         @_updateScore()
 
+    incrementSpeed: ->
+        @speed++
+        @_updateSpeed()
+
     _updateScore: -> $('#scoreValue').text(@score)
+    _updateSpeed: -> $('#speedValue').text(@speed)
 
     destroyElements: ->
         for b in @toDestroy
@@ -102,20 +111,24 @@ class Game
             @paused = true
             alert "Game is over..."
         return if @paused
+        @ticksToSpeed--
+        if @ticksToSpeed == 0
+            @ticksToSpeed = @speedRate
+            @incrementSpeed()
         @destroyElements()
-        @incrementScore() # FIXME: use sensible defaults
         @maybeCreateElement()
         @world.Step(1 / 30, 10, 10)
         @world.DrawDebugData()
         @world.ClearForces()
 
     maybeCreateElement: ->
-        return unless Math.random() <= .05
+        negProbability = 0.97 * Math.pow(0.95, @speed)
+        return unless Math.random() > negProbability
         randomY = (0.2 + 0.4 * Math.random())*  H / @scale
         @createCircle(Math.random() * W / @scale, randomY)
 
     createCircle: (x, y) ->
-        f = createFixture(new b2CircleShape(0.5))
+        f = createFixture(new b2CircleShape(1))
         b = createBody(x, y)
         @create b, f
 

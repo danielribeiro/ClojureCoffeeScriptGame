@@ -20,7 +20,7 @@ createFixture = function(shape) {
   f = new b2FixtureDef;
   f.density = 3.0;
   f.friction = .3;
-  f.restitution = 1.1;
+  f.restitution = .5;
   if (shape != null) {
     f.shape = shape;
   }
@@ -55,6 +55,7 @@ ContactListenerHandler = {
 Game = (function() {
   mixin(Game, ContactListenerHandler);
   Game.prototype.scale = 30.0;
+  Game.prototype.speedRate = 60;
   function Game(canvas) {
     this.canvas = canvas;
     this.centerX = global.W / (2 * this.scale);
@@ -66,12 +67,15 @@ Game = (function() {
     this.toDestroy = [];
     this.paused = false;
     this.gameOver = false;
-    return this.score = 0;
+    this.score = 0;
+    this.speed = 0;
+    return this.ticksToSpeed = this.speedRate;
   };
   Game.prototype.restart = function() {
     this.init();
     this.cleanUpWorld();
     this._updateScore();
+    this._updateSpeed();
     return this._updatePauseText();
   };
   Game.prototype.cleanUpWorld = function() {
@@ -93,8 +97,15 @@ Game = (function() {
     this.score++;
     return this._updateScore();
   };
+  Game.prototype.incrementSpeed = function() {
+    this.speed++;
+    return this._updateSpeed();
+  };
   Game.prototype._updateScore = function() {
     return $('#scoreValue').text(this.score);
+  };
+  Game.prototype._updateSpeed = function() {
+    return $('#speedValue').text(this.speed);
   };
   Game.prototype.destroyElements = function() {
     var b, data, _i, _len, _ref3;
@@ -129,16 +140,21 @@ Game = (function() {
     if (this.paused) {
       return;
     }
+    this.ticksToSpeed--;
+    if (this.ticksToSpeed === 0) {
+      this.ticksToSpeed = this.speedRate;
+      this.incrementSpeed();
+    }
     this.destroyElements();
-    this.incrementScore();
     this.maybeCreateElement();
     this.world.Step(1 / 30, 10, 10);
     this.world.DrawDebugData();
     return this.world.ClearForces();
   };
   Game.prototype.maybeCreateElement = function() {
-    var randomY;
-    if (!(Math.random() <= .05)) {
+    var negProbability, randomY;
+    negProbability = 0.97 * Math.pow(0.95, this.speed);
+    if (!(Math.random() > negProbability)) {
       return;
     }
     randomY = (0.2 + 0.4 * Math.random()) * H / this.scale;
@@ -146,7 +162,7 @@ Game = (function() {
   };
   Game.prototype.createCircle = function(x, y) {
     var b, f;
-    f = createFixture(new b2CircleShape(0.5));
+    f = createFixture(new b2CircleShape(1));
     b = createBody(x, y);
     return this.create(b, f);
   };

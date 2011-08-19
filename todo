@@ -1,11 +1,5 @@
-* random size
-* speed up
-0.9 ** n == speedup
-
-
 notifications:
 * game over
 
 * random object
-
-
+* random size
