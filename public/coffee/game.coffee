@@ -107,9 +107,8 @@ class Game
         debugDraw = new b2DebugDraw()
         debugDraw.SetSprite(@canvas.getContext("2d"))
         debugDraw.SetDrawScale @scale
-        debugDraw.SetFillAlpha(.7)
         debugDraw.SetLineThickness(1.0)
-        debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit)
+        debugDraw.SetFlags(b2DebugDraw.e_shapeBit)
         @world.SetDebugDraw(debugDraw)
         setInterval((=> @tick()), 1000 / 30)
 
@@ -139,23 +138,30 @@ class Game
         type = @objectList[randomInt(@objectList.length)]
         @["create#{type}"] randomX, randomY, Math.random() + 1
 
+    randomBody: (x, y) ->
+        b = createBody x, y
+        b.angle = Math.random() * 360
+        vx = Math.random() * 10 - 5
+        b.linearVelocity = v vx, 0
+        b.angularVelocity = Math.random() * 4 - 2
+        return b
+
     createTriangle: (x, y, size) ->
         fixDef = createFixture(new b2PolygonShape())
         vertices = [v(-size, 0), v(size, 0), v(0, Math.sqrt(3) * size)]
         fixDef.shape.SetAsArray vertices
-        bodyDef = createBody x, y
+        bodyDef = @randomBody x, y
         @create bodyDef, fixDef
-
 
     createSquare: (x, y, size) ->
         fixDef = createFixture new b2PolygonShape()
-        bodyDef = createBody x, y
+        bodyDef = @randomBody x, y
         fixDef.shape.SetAsBox size, size
         @create bodyDef, fixDef
 
     createCircle: (x, y, size) ->
         f = createFixture new b2CircleShape(size)
-        b = createBody x, y
+        b = @randomBody x, y
         @create b, f
 
     buildWorld: ->

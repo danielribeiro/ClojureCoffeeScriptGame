@@ -133,9 +133,8 @@ Game = (function() {
     debugDraw = new b2DebugDraw();
     debugDraw.SetSprite(this.canvas.getContext("2d"));
     debugDraw.SetDrawScale(this.scale);
-    debugDraw.SetFillAlpha(.7);
     debugDraw.SetLineThickness(1.0);
-    debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+    debugDraw.SetFlags(b2DebugDraw.e_shapeBit);
     this.world.SetDebugDraw(debugDraw);
     return setInterval((__bind(function() {
       return this.tick();
@@ -175,25 +174,34 @@ Game = (function() {
     type = this.objectList[randomInt(this.objectList.length)];
     return this["create" + type](randomX, randomY, Math.random() + 1);
   };
+  Game.prototype.randomBody = function(x, y) {
+    var b, vx;
+    b = createBody(x, y);
+    b.angle = Math.random() * 360;
+    vx = Math.random() * 10 - 5;
+    b.linearVelocity = v(vx, 0);
+    b.angularVelocity = Math.random() * 4 - 2;
+    return b;
+  };
   Game.prototype.createTriangle = function(x, y, size) {
     var bodyDef, fixDef, vertices;
     fixDef = createFixture(new b2PolygonShape());
     vertices = [v(-size, 0), v(size, 0), v(0, Math.sqrt(3) * size)];
     fixDef.shape.SetAsArray(vertices);
-    bodyDef = createBody(x, y);
+    bodyDef = this.randomBody(x, y);
     return this.create(bodyDef, fixDef);
   };
   Game.prototype.createSquare = function(x, y, size) {
     var bodyDef, fixDef;
     fixDef = createFixture(new b2PolygonShape());
-    bodyDef = createBody(x, y);
+    bodyDef = this.randomBody(x, y);
     fixDef.shape.SetAsBox(size, size);
     return this.create(bodyDef, fixDef);
   };
   Game.prototype.createCircle = function(x, y, size) {
     var b, f;
     f = createFixture(new b2CircleShape(size));
-    b = createBody(x, y);
+    b = this.randomBody(x, y);
     return this.create(b, f);
   };
   Game.prototype.buildWorld = function() {
