@@ -12,11 +12,13 @@ getCanvas = ->
 
 v = (x, y) -> new b2Vec2(x, y)
 
+randomInt = (a) -> Math.floor Math.random() * a
+
 createFixture = (shape) ->
     f = new b2FixtureDef
     f.density = 3.0
     f.friction = .3
-    f.restitution = .9 # FIXME: do not use this, use .7
+    f.restitution = .9
     f.shape = shape if shape?
     f.filter.groupIndex = 1
     return f
@@ -43,25 +45,30 @@ class Game
     mixin @, ContactListenerHandler
     scale: 30.0
     speedRate: 300
+    objectList: ['Circle', 'Square', 'Triangle']
 
     constructor: (@canvas) ->
         @centerX = global.W / (2 * @scale)
         @centerY = global.H / (2 * @scale)
         @world = null
+        @buildWorld()
         @init()
 
     init: ->
+        for i in [1..5]
+            @createElement()
         @toDestroy = []
         @paused = false
         @gameOver = false
         @score = 0
         @speed = 0
         @ticksToSpeed = @speedRate
+        return
 
     restart: ->
+        @cleanUpWorld()
         @init()
         $('#gameOver').hide()
-        @cleanUpWorld()
         @_updateScore()
         @_updateSpeed()
         @_updatePauseText()
@@ -87,7 +94,7 @@ class Game
         @_updateSpeed()
 
     _updateScore: -> $('#scoreValue').text(@score)
-    _updateSpeed: -> $('#speedValue').text(@speed).hide().fadeIn()
+    _updateSpeed: -> $('#speedValue').text(@speed).hide().slideDown()
 
     destroyElements: ->
         for b in @toDestroy
@@ -97,7 +104,6 @@ class Game
         @toDestroy = []
 
     animateWorld: ->
-        @buildWorld()
         debugDraw = new b2DebugDraw()
         debugDraw.SetSprite(@canvas.getContext("2d"))
         debugDraw.SetDrawScale @scale
@@ -110,7 +116,7 @@ class Game
     tick: ->
         if @gameOver and not @paused
             @paused = true
-            $('#gameOver').show()
+            $('#gameOver').fadeIn()
         return if @paused
         @ticksToSpeed--
         if @ticksToSpeed == 0
@@ -125,12 +131,31 @@ class Game
     maybeCreateElement: ->
         negProbability = 0.97 * Math.pow(0.95, @speed)
         return unless Math.random() > negProbability
-        randomY = (0.2 + 0.4 * Math.random())*  H / @scale
-        @createCircle(Math.random() * W / @scale, randomY)
+        @createElement()
 
-    createCircle: (x, y) ->
-        f = createFixture(new b2CircleShape(1))
-        b = createBody(x, y)
+    createElement: ->
+        randomY = (0.2 + 0.4 * Math.random())*  H / @scale
+        randomX = (Math.random() * (W - 50) + 25) / @scale
+        type = @objectList[randomInt(@objectList.length)]
+        @["create#{type}"] randomX, randomY, Math.random() + 1
+
+    createTriangle: (x, y, size) ->
+        fixDef = createFixture(new b2PolygonShape())
+        vertices = [v(-size, 0), v(size, 0), v(0, Math.sqrt(3) * size)]
+        fixDef.shape.SetAsArray vertices
+        bodyDef = createBody x, y
+        @create bodyDef, fixDef
+
+
+    createSquare: (x, y, size) ->
+        fixDef = createFixture new b2PolygonShape()
+        bodyDef = createBody x, y
+        fixDef.shape.SetAsBox size, size
+        @create bodyDef, fixDef
+
+    createCircle: (x, y, size) ->
+        f = createFixture new b2CircleShape(size)
+        b = createBody x, y
         @create b, f
 
     buildWorld: ->
@@ -138,9 +163,6 @@ class Game
         doSleep = off
         @world = new b2World gravity, doSleep
         @buildWalls()
-        @boxAt [2, 2], [3, 3]
-        @boxAt [.5, .5], [6, 6]
-        @triangleAt [15, 5]
         @world.SetContactListener @
         return
 
@@ -157,20 +179,6 @@ class Game
         body = @world.CreateBody(body)
         body.CreateFixture(fixture)
         return body
-
-    triangleAt: (position) ->
-        fixDef = createFixture(new b2PolygonShape())
-        fixDef.shape.SetAsArray([v(-1, 0), v(1, 0), v(0, 2.0)])
-        bodyDef = createBody position...
-        @create bodyDef, fixDef
-
-
-    boxAt: (dimensions, position) ->
-        fixDef = createFixture(new b2PolygonShape())
-        bodyDef = createBody(position...)
-        fixDef.shape.SetAsBox dimensions...
-        @create bodyDef, fixDef
-
 
     wall: (dimensions, position, userData) ->
         fixDef = createFixture(new b2PolygonShape())
@@ -202,6 +210,7 @@ class Game
         @toDestroy.push body
 
     onClick: (x, y) ->
+        return if @paused
         @deleteAt x / @scale, y / @scale
 
 

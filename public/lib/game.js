@@ -1,4 +1,4 @@
-var ContactListenerHandler, Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2MassData, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, v, _ref, _ref2;
+var ContactListenerHandler, Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2MassData, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, randomInt, v, _ref, _ref2;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 global = window;
 b2Vec2 = Box2D.Common.Math.b2Vec2;
@@ -14,6 +14,9 @@ getCanvas = function() {
 };
 v = function(x, y) {
   return new b2Vec2(x, y);
+};
+randomInt = function(a) {
+  return Math.floor(Math.random() * a);
 };
 createFixture = function(shape) {
   var f;
@@ -56,25 +59,31 @@ Game = (function() {
   mixin(Game, ContactListenerHandler);
   Game.prototype.scale = 30.0;
   Game.prototype.speedRate = 300;
+  Game.prototype.objectList = ['Circle', 'Square', 'Triangle'];
   function Game(canvas) {
     this.canvas = canvas;
     this.centerX = global.W / (2 * this.scale);
     this.centerY = global.H / (2 * this.scale);
     this.world = null;
+    this.buildWorld();
     this.init();
   }
   Game.prototype.init = function() {
+    var i;
+    for (i = 1; i <= 5; i++) {
+      this.createElement();
+    }
     this.toDestroy = [];
     this.paused = false;
     this.gameOver = false;
     this.score = 0;
     this.speed = 0;
-    return this.ticksToSpeed = this.speedRate;
+    this.ticksToSpeed = this.speedRate;
   };
   Game.prototype.restart = function() {
+    this.cleanUpWorld();
     this.init();
     $('#gameOver').hide();
-    this.cleanUpWorld();
     this._updateScore();
     this._updateSpeed();
     return this._updatePauseText();
@@ -106,7 +115,7 @@ Game = (function() {
     return $('#scoreValue').text(this.score);
   };
   Game.prototype._updateSpeed = function() {
-    return $('#speedValue').text(this.speed).hide().fadeIn();
+    return $('#speedValue').text(this.speed).hide().slideDown();
   };
   Game.prototype.destroyElements = function() {
     var b, data, _i, _len, _ref3;
@@ -121,7 +130,6 @@ Game = (function() {
   };
   Game.prototype.animateWorld = function() {
     var debugDraw;
-    this.buildWorld();
     debugDraw = new b2DebugDraw();
     debugDraw.SetSprite(this.canvas.getContext("2d"));
     debugDraw.SetDrawScale(this.scale);
@@ -136,7 +144,7 @@ Game = (function() {
   Game.prototype.tick = function() {
     if (this.gameOver && !this.paused) {
       this.paused = true;
-      $('#gameOver').show();
+      $('#gameOver').fadeIn();
     }
     if (this.paused) {
       return;
@@ -153,17 +161,38 @@ Game = (function() {
     return this.world.ClearForces();
   };
   Game.prototype.maybeCreateElement = function() {
-    var negProbability, randomY;
+    var negProbability;
     negProbability = 0.97 * Math.pow(0.95, this.speed);
     if (!(Math.random() > negProbability)) {
       return;
     }
-    randomY = (0.2 + 0.4 * Math.random()) * H / this.scale;
-    return this.createCircle(Math.random() * W / this.scale, randomY);
+    return this.createElement();
   };
-  Game.prototype.createCircle = function(x, y) {
+  Game.prototype.createElement = function() {
+    var randomX, randomY, type;
+    randomY = (0.2 + 0.4 * Math.random()) * H / this.scale;
+    randomX = (Math.random() * (W - 50) + 25) / this.scale;
+    type = this.objectList[randomInt(this.objectList.length)];
+    return this["create" + type](randomX, randomY, Math.random() + 1);
+  };
+  Game.prototype.createTriangle = function(x, y, size) {
+    var bodyDef, fixDef, vertices;
+    fixDef = createFixture(new b2PolygonShape());
+    vertices = [v(-size, 0), v(size, 0), v(0, Math.sqrt(3) * size)];
+    fixDef.shape.SetAsArray(vertices);
+    bodyDef = createBody(x, y);
+    return this.create(bodyDef, fixDef);
+  };
+  Game.prototype.createSquare = function(x, y, size) {
+    var bodyDef, fixDef;
+    fixDef = createFixture(new b2PolygonShape());
+    bodyDef = createBody(x, y);
+    fixDef.shape.SetAsBox(size, size);
+    return this.create(bodyDef, fixDef);
+  };
+  Game.prototype.createCircle = function(x, y, size) {
     var b, f;
-    f = createFixture(new b2CircleShape(1));
+    f = createFixture(new b2CircleShape(size));
     b = createBody(x, y);
     return this.create(b, f);
   };
@@ -173,9 +202,6 @@ Game = (function() {
     doSleep = false;
     this.world = new b2World(gravity, doSleep);
     this.buildWalls();
-    this.boxAt([2, 2], [3, 3]);
-    this.boxAt([.5, .5], [6, 6]);
-    this.triangleAt([15, 5]);
     this.world.SetContactListener(this);
   };
   Game.prototype.buildWalls = function() {
@@ -192,20 +218,6 @@ Game = (function() {
     body = this.world.CreateBody(body);
     body.CreateFixture(fixture);
     return body;
-  };
-  Game.prototype.triangleAt = function(position) {
-    var bodyDef, fixDef;
-    fixDef = createFixture(new b2PolygonShape());
-    fixDef.shape.SetAsArray([v(-1, 0), v(1, 0), v(0, 2.0)]);
-    bodyDef = createBody.apply(null, position);
-    return this.create(bodyDef, fixDef);
-  };
-  Game.prototype.boxAt = function(dimensions, position) {
-    var bodyDef, fixDef, _ref3;
-    fixDef = createFixture(new b2PolygonShape());
-    bodyDef = createBody.apply(null, position);
-    (_ref3 = fixDef.shape).SetAsBox.apply(_ref3, dimensions);
-    return this.create(bodyDef, fixDef);
   };
   Game.prototype.wall = function(dimensions, position, userData) {
     var bodyDef, fixDef, _ref3;
@@ -245,6 +257,9 @@ Game = (function() {
     return this.toDestroy.push(body);
   };
   Game.prototype.onClick = function(x, y) {
+    if (this.paused) {
+      return;
+    }
     return this.deleteAt(x / this.scale, y / this.scale);
   };
   Game.prototype.togglePause = function() {
