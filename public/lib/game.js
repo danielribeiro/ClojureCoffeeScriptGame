@@ -20,7 +20,7 @@ createFixture = function(shape) {
   f = new b2FixtureDef;
   f.density = 3.0;
   f.friction = .3;
-  f.restitution = .5;
+  f.restitution = .9;
   if (shape != null) {
     f.shape = shape;
   }
@@ -55,7 +55,7 @@ ContactListenerHandler = {
 Game = (function() {
   mixin(Game, ContactListenerHandler);
   Game.prototype.scale = 30.0;
-  Game.prototype.speedRate = 60;
+  Game.prototype.speedRate = 300;
   function Game(canvas) {
     this.canvas = canvas;
     this.centerX = global.W / (2 * this.scale);
@@ -73,6 +73,7 @@ Game = (function() {
   };
   Game.prototype.restart = function() {
     this.init();
+    $('#gameOver').hide();
     this.cleanUpWorld();
     this._updateScore();
     this._updateSpeed();
@@ -105,7 +106,7 @@ Game = (function() {
     return $('#scoreValue').text(this.score);
   };
   Game.prototype._updateSpeed = function() {
-    return $('#speedValue').text(this.speed);
+    return $('#speedValue').text(this.speed).hide().fadeIn();
   };
   Game.prototype.destroyElements = function() {
     var b, data, _i, _len, _ref3;
@@ -135,7 +136,7 @@ Game = (function() {
   Game.prototype.tick = function() {
     if (this.gameOver && !this.paused) {
       this.paused = true;
-      alert("Game is over...");
+      $('#gameOver').show();
     }
     if (this.paused) {
       return;
@@ -247,6 +248,9 @@ Game = (function() {
     return this.deleteAt(x / this.scale, y / this.scale);
   };
   Game.prototype.togglePause = function() {
+    if (this.gameOver) {
+      return;
+    }
     this.paused = !this.paused;
     return this._updatePauseText();
   };
@@ -259,6 +263,7 @@ init_web_app = function() {
   var canvas, game;
   canvas = getCanvas();
   game = new Game(canvas);
+  $('#gameOver').hide();
   $('#pause').click(function() {
     return game.togglePause();
   });

@@ -16,7 +16,7 @@ createFixture = (shape) ->
     f = new b2FixtureDef
     f.density = 3.0
     f.friction = .3
-    f.restitution = .5 # FIXME: do not use this, use .7
+    f.restitution = .9 # FIXME: do not use this, use .7
     f.shape = shape if shape?
     f.filter.groupIndex = 1
     return f
@@ -42,7 +42,7 @@ ContactListenerHandler =
 class Game
     mixin @, ContactListenerHandler
     scale: 30.0
-    speedRate: 60
+    speedRate: 300
 
     constructor: (@canvas) ->
         @centerX = global.W / (2 * @scale)
@@ -60,6 +60,7 @@ class Game
 
     restart: ->
         @init()
+        $('#gameOver').hide()
         @cleanUpWorld()
         @_updateScore()
         @_updateSpeed()
@@ -86,7 +87,7 @@ class Game
         @_updateSpeed()
 
     _updateScore: -> $('#scoreValue').text(@score)
-    _updateSpeed: -> $('#speedValue').text(@speed)
+    _updateSpeed: -> $('#speedValue').text(@speed).hide().fadeIn()
 
     destroyElements: ->
         for b in @toDestroy
@@ -109,7 +110,7 @@ class Game
     tick: ->
         if @gameOver and not @paused
             @paused = true
-            alert "Game is over..."
+            $('#gameOver').show()
         return if @paused
         @ticksToSpeed--
         if @ticksToSpeed == 0
@@ -205,16 +206,16 @@ class Game
 
 
     togglePause: ->
+        return if @gameOver
         @paused = not @paused
         @_updatePauseText()
 
     _updatePauseText: -> $('#pause').text(if @paused then "Unpause" else "Pause")
 
-
-
 init_web_app = ->
     canvas = getCanvas()
     game = new Game(canvas)
+    $('#gameOver').hide()
     $('#pause').click -> game.togglePause()
     $('#restart').click -> game.restart()
     $('#canvas').mousedown (e) ->
