@@ -238,4 +238,3 @@ init_web_app = ->
         game.onClick(e.pageX - o.left, e.pageY - o.top)
         return false
     game.animateWorld()
-

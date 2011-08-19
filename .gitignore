@@ -11,4 +11,7 @@ db
 ## Build
 *.gem
 
-fixtures/output.mcr
+# Idea
+/clojure/clojure.iml
+/clojure/lib/clojure.jar
+.idea
