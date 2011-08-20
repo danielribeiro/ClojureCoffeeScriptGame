@@ -1,2 +1,2 @@
 #!/bin/bash
-coffee -wcbo lib/ src/
+coffee -wcbo jslib/ src/

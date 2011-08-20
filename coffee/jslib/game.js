@@ -1,10 +1,10 @@
-var ContactListenerHandler, Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2MassData, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, randomInt, v, _ref, _ref2;
+var ContactListenerHandler, Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, randomInt, v, _ref, _ref2;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 global = window;
 b2Vec2 = Box2D.Common.Math.b2Vec2;
 b2AABB = Box2D.Collision.b2AABB;
 _ref = Box2D.Dynamics, b2BodyDef = _ref.b2BodyDef, b2Body = _ref.b2Body, b2FixtureDef = _ref.b2FixtureDef, b2Fixture = _ref.b2Fixture, b2World = _ref.b2World, b2DebugDraw = _ref.b2DebugDraw;
-_ref2 = Box2D.Collision.Shapes, b2MassData = _ref2.b2MassData, b2PolygonShape = _ref2.b2PolygonShape, b2CircleShape = _ref2.b2CircleShape;
+_ref2 = Box2D.Collision.Shapes, b2PolygonShape = _ref2.b2PolygonShape, b2CircleShape = _ref2.b2CircleShape;
 getCanvas = function() {
   var c;
   c = $('#canvas');
@@ -27,15 +27,12 @@ createFixture = function(shape) {
   if (shape != null) {
     f.shape = shape;
   }
-  f.filter.groupIndex = 1;
   return f;
 };
 createBody = function(x, y) {
   var b;
   b = new b2BodyDef;
-  if ((x != null) && (y != null)) {
-    b.position.Set(x, y);
-  }
+  b.position.Set(x, y);
   b.type = b2Body.b2_dynamicBody;
   return b;
 };
@@ -214,8 +211,8 @@ Game = (function() {
   };
   Game.prototype.buildWalls = function() {
     var dim, h, w;
-    w = W / (2 * this.scale);
-    h = H / (2 * this.scale);
+    w = this.centerX;
+    h = this.centerY;
     dim = 200 / this.scale;
     this.wall([w, dim], [w, -dim], 'ceiling');
     this.wall([w, dim], [w, 2 * h + dim]);
@@ -283,10 +280,8 @@ Game = (function() {
   return Game;
 })();
 init_web_app = function() {
-  var canvas, game;
-  canvas = getCanvas();
-  game = new Game(canvas);
-  $('#gameOver').hide();
+  var game;
+  game = new Game(getCanvas());
   $('#pause').click(function() {
     return game.togglePause();
   });

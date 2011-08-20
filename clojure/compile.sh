@@ -1,0 +1,3 @@
+#!/bin/bash
+echo Compiling...
+cljsc game.clj '{:pretty-print true}' > game.js 

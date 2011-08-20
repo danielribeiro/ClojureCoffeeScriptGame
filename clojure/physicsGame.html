@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head><meta content="text/html;charset=UTF-8" http-equiv="content-type" />
-        <title>Click and kill: Coffeescript Version</title>
+        <title>Click and kill: ClojureScript Version</title>
         <style type="text/css">
             body {
                 font-family: Helvetica Neue, Arial, Lucida Grande, sans-serif;
@@ -105,11 +105,12 @@
             }
 
         </style>
+        <script src="./out/goog/base.js" type="text/javascript"></script>
         <script src='./jslib/jquery-1.6.2.js' type='text/javascript'></script>
         <script src='./jslib/Box2dWeb-2.1a.2.js' type='text/javascript'></script>
         <script src='./jslib/rbcoffee.js' type='text/javascript'></script>
-        <script src='./jslib/game.js' type='text/javascript'></script>
-        <script type='text/javascript'>$(function () {init_web_app()})</script>
+        <script src='./game.js' type='text/javascript'></script>
+        <script type="text/javascript">goog.require('physicsGame');</script>
     </head>
     <body>
         <div id="content">

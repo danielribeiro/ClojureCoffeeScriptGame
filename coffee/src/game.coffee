@@ -2,7 +2,7 @@ global = window
 b2Vec2 = Box2D.Common.Math.b2Vec2
 b2AABB = Box2D.Collision.b2AABB
 {b2BodyDef, b2Body, b2FixtureDef, b2Fixture, b2World, b2DebugDraw} = Box2D.Dynamics
-{b2MassData, b2PolygonShape, b2CircleShape} = Box2D.Collision.Shapes
+{b2PolygonShape, b2CircleShape} = Box2D.Collision.Shapes
 
 getCanvas = ->
     c = $('#canvas')
@@ -20,12 +20,11 @@ createFixture = (shape) ->
     f.friction = .3
     f.restitution = .9
     f.shape = shape if shape?
-    f.filter.groupIndex = 1
     return f
 
 createBody = (x, y) ->
     b = new b2BodyDef
-    b.position.Set x, y if x? and y?
+    b.position.Set x, y
     b.type = b2Body.b2_dynamicBody
     return b
 
@@ -105,10 +104,10 @@ class Game
 
     animateWorld: ->
         debugDraw = new b2DebugDraw()
-        debugDraw.SetSprite(@canvas.getContext("2d"))
+        debugDraw.SetSprite @canvas.getContext "2d"
         debugDraw.SetDrawScale @scale
-        debugDraw.SetLineThickness(1.0)
-        debugDraw.SetFlags(b2DebugDraw.e_shapeBit)
+        debugDraw.SetLineThickness 1.0
+        debugDraw.SetFlags b2DebugDraw.e_shapeBit
         @world.SetDebugDraw(debugDraw)
         setInterval((=> @tick()), 1000 / 30)
 
@@ -173,8 +172,8 @@ class Game
         return
 
     buildWalls: ->
-        w = W / (2 * @scale)
-        h = H / (2 * @scale)
+        w = @centerX
+        h = @centerY
         dim = 200 / @scale
         @wall [w, dim], [w, -dim], 'ceiling'
         @wall [w, dim], [w, 2 * h + dim]
@@ -228,9 +227,7 @@ class Game
     _updatePauseText: -> $('#pause').text(if @paused then "Unpause" else "Pause")
 
 init_web_app = ->
-    canvas = getCanvas()
-    game = new Game(canvas)
-    $('#gameOver').hide()
+    game = new Game getCanvas()
     $('#pause').click -> game.togglePause()
     $('#restart').click -> game.restart()
     $('#canvas').mousedown (e) ->
