@@ -111,13 +111,18 @@
         h (:center-y game)
         dim (/ 200 scale)]
     (wall game w dim w (- dim) :ceiling)
-    game
+    (wall game w dim w (+ dim (* 2 h)))
+    (wall game dim h (- dim) h)
+    (wall game dim h (+ dim (* 2 w)) h)
     )
   )
 
 (defn tick [game]
-  (p "tick")
-  )
+  (let [w (game :world)]
+    (.Step w 1 (/ 1 30) 10 10)
+    (. w (DrawDebugData))
+    (. w (ClearForces))
+    ))
 
 (defn animate-world [game]
   (let [debug-draw (b2DebugDraw.)]
