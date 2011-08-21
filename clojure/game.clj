@@ -44,16 +44,19 @@
 (defn atom-set
   "Helper function for setting an atom of a map"
   [atom & values]
-  (swap! atom #(apply assoc % values))
+  (do
+    (swap! atom #(apply assoc % values))
+    atom
+    )
   )
 
-(def)
 
 (def p js/puts)
 (def W)
 (def H)
 (def scale 30)
 (def speed-rate 300)
+(def empty-fn (constantly nil))
 
 (defn get-canvas []
   (let [canvas (dom :canvas)]
@@ -63,37 +66,7 @@
     )
   )
 
-(defn create-game [canvas]
-  (let [gravity (v 0 10)
-        doSleep false
-        twiceScale (* 2 scale)]
-    (init (atom
-      {:center-x (/ W twiceScale)
-       :center-y (/ H twiceScale)
-       :world (b2World. gravity doSleep)
-       :canvas canvas
-       }
 
-      ))
-    ))
-
-(defn init [game]
-  (atom-set game
-    :to-destroy []
-    :paused false
-    :game-over false
-    :score 0
-    :speed 0
-    :ticks-to-speed speed-rate
-
-    )
-  )
-
-(defn add-methods [game-ref]
-  (assoc game-ref
-    :create-circle create-circle
-    )
-  )
 
 
 ;  (set! (. f density) 3) is ugly. Lack of macros/eval make this impossible to solve without native javascript
@@ -101,7 +74,7 @@
   ([shape] (js-set (b2FixtureDef.)
              :density 3
              :friction 0.3
-             :restitution 0.9
+             :restitution 1.9
              :shape shape
              ))
   ([] (create-fixture nil))
@@ -128,7 +101,7 @@
           body-def (create-body x y)]
       (-> (.shape fix-def) (.SetAsBox width height))
       (js-set body-def
-        :userData (name user-data)
+        :userData user-data
         :type (.b2_staticBody b2Body))
       (create game body-def fix-def))
     ))
@@ -158,6 +131,11 @@
   (create game (random-body x y) (create-fixture (b2CircleShape. size)))
   )
 
+(defn- paused? [game] (@game :paused))
+(defn- not-paused? [game] (not (paused? game)))
+(defn- set-paused [game val] (atom-set game :paused val))
+
+
 (defn create-element [game]
   (let [randomY (/ (* H (+ 0.2 (* 0.4 (rand)))) scale)
         randomX (/ (+ 25 (* (rand) (- W 50))) scale)]
@@ -171,13 +149,22 @@
     )
   )
 
-(defn tick [game]
+(defn- do-tick [game]
   (let [w (@game :world)]
     (maybe-create-element game)
     (.Step w (/ 1 30) 10 10)
     (. w (DrawDebugData))
     (. w (ClearForces))
-    ))
+    )
+  )
+
+(defn tick [game]
+  (if (and (@game :game-over) (not-paused? game))
+    (do (set-paused game true)
+      (. (dom :gameOver) (fadeIn)))
+    (if (not-paused? game) (do-tick game))
+    )
+  )
 
 (defn animate-world [game]
   (let [debug-draw (b2DebugDraw.)]
@@ -192,15 +179,89 @@
     ))
 
 
+; Resolve doesn't work on clojurescript. Therefore, if we want to get a function from a string, we
+; have to make the lookup ourselves.
+(defn add-methods [game-ref]
+  (assoc game-ref
+    :create-circle create-circle
+    )
+  )
+
+(defn init [game]
+  (atom-set game
+    :to-destroy []
+    :paused false
+    :game-over false
+    :score 0
+    :speed 0
+    :ticks-to-speed speed-rate
+    )
+  )
+
+(defn pre-solve [game contact manifold]
+  (if (. contact (IsTouching))
+    (let [data-x (.. contact (GetFixtureA) (GetBody) (GetUserData))
+          data-y (.. contact (GetFixtureB) (GetBody) (GetUserData))]
+      (if (some #(= %1 :ceiling) [data-x data-y])
+        (atom-set game :game-over true)
+        )))
+  )
+
+(defn contact-listener [game]
+  (js-set (js/Object.)
+    :PostSolve empty-fn
+    :BeginContact empty-fn
+    :EndContact empty-fn
+    :PreSolve #(pre-solve game %1 %2)
+    )
+  )
+
+(defn set-contact-listener [game]
+  (do
+    (.SetContactListener (@game :world) (contact-listener game))
+    game
+    )
+  )
+
+(defn build-world []
+  (let [gravity (v 0 10)
+        doSleep false
+        world (b2World. gravity doSleep)]
+    world
+    )
+  )
+
+(defn create-game [canvas]
+  (let [twiceScale (* 2 scale)]
+    (->
+      {:center-x (/ W twiceScale)
+       :center-y (/ H twiceScale)
+       :world (build-world)
+       :canvas canvas
+       }
+      add-methods atom set-contact-listener init
+      )
+    ))
+
+(defn- update-pause-text [game]
+  (-> (dom :pause)
+    (.text (if (@game :paused) "Unpause" "Pause")
+      )))
+
+(defn toggle-pause [game]
+  (if (not (:game-over @game)
+        (do
+          (set-paused game (not-paused? game))
+          (update-pause-text game)
+          )))
+  )
+
 (defn init-web-app []
   (let [game (create-game (get-canvas))]
+    (-> (dom :pause) (.click #(toggle-pause game)))
     (build-walls game)
     (animate-world game)
     ))
 
 (jquery init-web-app)
-
-(defn redfn [r [k v]]
-  (assoc r k (apply f v args))
-  )
 
