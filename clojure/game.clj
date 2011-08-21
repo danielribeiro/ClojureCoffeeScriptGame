@@ -74,7 +74,7 @@
   ([shape] (js-set (b2FixtureDef.)
              :density 3
              :friction 0.3
-             :restitution 1.9
+             :restitution 0.9
              :shape shape
              ))
   ([] (create-fixture nil))
@@ -149,8 +149,25 @@
     )
   )
 
+(defn increment-speed [game]
+  (let [domspeed (dom :speedValue)]
+    (atom-set game :speed (inc (@game :speed)))
+    (.text domspeed (@game :speed))
+    (.. domspeed (hide) (slideDown))
+    )
+  )
+
 (defn- do-tick [game]
-  (let [w (@game :world)]
+  (let [w (@game :world)
+        missing-ticks (@game :ticks-to-speed)]
+    (if (= 1 missing-ticks)
+      (do
+        (atom-set game :ticks-to-speed speed-rate)
+        (increment-speed game)
+        (p "incrementing")
+        )
+      (atom-set game :ticks-to-speed (dec missing-ticks)))
+    (p "now its tics are :" (@game :ticks-to-speed))
     (maybe-create-element game)
     (.Step w (/ 1 30) 10 10)
     (. w (DrawDebugData))
