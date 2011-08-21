@@ -231,5 +231,4 @@ init_web_app = ->
         o = $(@).offset()
         game.onClick e.pageX - o.left, e.pageY - o.top
         return false
-    puts game.world
     game.animateWorld()

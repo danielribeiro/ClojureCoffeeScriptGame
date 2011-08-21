@@ -292,6 +292,5 @@ init_web_app = function() {
     game.onClick(e.pageX - o.left, e.pageY - o.top);
     return false;
   });
-  puts(game.world);
   return game.animateWorld();
 };

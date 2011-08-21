@@ -149,11 +149,20 @@
     )
   )
 
-(defn increment-speed [game]
+(defn update-speed [game]
   (let [domspeed (dom :speedValue)]
-    (atom-set game :speed (inc (@game :speed)))
     (.text domspeed (@game :speed))
     (.. domspeed (hide) (slideDown))
+    )
+  )
+
+(defn update-score [game]
+  (-> (dom :scoreValue) (.text (@game :score))))
+
+(defn increment-speed [game]
+  (do
+    (atom-set game :speed (inc (@game :speed)))
+    (update-speed game)
     )
   )
 
@@ -163,7 +172,7 @@
         ]
     (doseq [b to-destroy] (-> (@game :world) (.DestroyBody b)))
     (atom-set game :to-destroy [], :score new-score)
-    (-> (dom :scoreValue) (.text new-score))
+    (update-score game)
     ))
 
 (defn- do-tick [game]
@@ -213,13 +222,16 @@
   )
 
 (defn init [game]
-  (atom-set game
-    :to-destroy []
-    :paused false
-    :game-over false
-    :score 0
-    :speed 0
-    :ticks-to-speed speed-rate
+  (do
+    (dotimes [_ 5] (create-element game))
+    (atom-set game
+      :to-destroy []
+      :paused false
+      :game-over false
+      :score 0
+      :speed 0
+      :ticks-to-speed speed-rate
+      )
     )
   )
 
@@ -258,23 +270,23 @@
 
 (defn create-game [canvas]
   (let [twiceScale (* 2 scale)]
-    (->
-      {:center-x (/ W twiceScale)
-       :center-y (/ H twiceScale)
-       :world (build-world)
-       :canvas canvas
-       }
+    (-> {:center-x (/ W twiceScale)
+         :center-y (/ H twiceScale)
+         :world (build-world)
+         :canvas canvas
+         }
       add-methods atom set-contact-listener init
       )
     ))
 
-(defn add-to-destroy [game body]
+(defn- add-to-destroy [game body]
   (atom-set game :to-destroy (conj (@game :to-destroy) body))
   )
 
+(defn- static-body? [body]
+  (= (. body (GetType)) (.b2_staticBody b2Body)))
 (defn- static? [fixture]
-  (= (.. fixture (GetBody) (GetType))
-    (.b2_staticBody b2Body)))
+  (static-body? (. fixture (GetBody))))
 
 (defn- not-has-point? [fixture vec]
   (let [shape (. fixture (GetShape))
@@ -305,16 +317,41 @@
       )))
 
 (defn toggle-pause [game]
-  (if (not (:game-over @game)
-        (do
-          (set-paused game (not-paused? game))
-          (update-pause-text game)
-          )))
+  (when-not (:game-over @game)
+    (set-paused game (not-paused? game))
+    (update-pause-text game)
+    ))
+
+
+(defn iter-each-body [body func]
+  (when body
+    (func body)
+    (iter-each-body (. body (GetNext)) func)
+    ))
+
+(defn- each-body [game func]
+  (iter-each-body (. (@game :world) (GetBodyList)) func)
+  )
+
+(defn cleanup-world [game]
+  (each-body game
+    #(when-not (static-body? %) (.DestroyBody (@game :world) %)))
+  )
+
+(defn restart [game]
+  (do
+    (cleanup-world game)
+    (init game)
+    (update-score game)
+    (update-speed game)
+    (update-pause-text game)
+    )
   )
 
 (defn init-web-app []
   (let [game (create-game (get-canvas))]
     (-> (dom :pause) (.click #(toggle-pause game)))
+    (-> (dom :restart) (.click #(restart game)))
     (-> (dom :canvas) (.mousedown
                         (fn [e]
                           (let [o (. (dom :canvas) (offset))]
