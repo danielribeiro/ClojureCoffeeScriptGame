@@ -157,6 +157,15 @@
     )
   )
 
+(defn destroy-elements [game]
+  (let [to-destroy (@game :to-destroy)
+        new-score (+ (@game :score) (count to-destroy))
+        ]
+    (doseq [b to-destroy] (-> (@game :world) (.DestroyBody b)))
+    (atom-set game :to-destroy [], :score new-score)
+    (-> (dom :scoreValue) (.text new-score))
+    ))
+
 (defn- do-tick [game]
   (let [w (@game :world)
         missing-ticks (@game :ticks-to-speed)]
@@ -166,6 +175,7 @@
         (increment-speed game)
         )
       (atom-set game :ticks-to-speed (dec missing-ticks)))
+    (if (not (empty? (@game :to-destroy))) (destroy-elements game))
     (maybe-create-element game)
     (.Step w (/ 1 30) 10 10)
     (. w (DrawDebugData))
@@ -278,8 +288,7 @@
         delta 0.001
         callback (fn [f]
       (if (or (static? f) (not-has-point? f mouse-vec)) true
-        (do (add-to-destroy game (. f (GetBody))) false)))
-        ]
+        (do (add-to-destroy game (. f (GetBody))) false)))]
     (-> (.lowerBound aabb) (.Set (- x delta) (- y delta)))
     (-> (.upperBound aabb) (.Set (+ x delta) (+ y delta)))
     (-> (@game :world) (.QueryAABB callback aabb))

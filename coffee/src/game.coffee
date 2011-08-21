@@ -83,11 +83,6 @@ class Game
             body = body.GetNext()
         return
 
-
-    incrementScore: ->
-        @score++
-        @_updateScore()
-
     incrementSpeed: ->
         @speed++
         @_updateSpeed()
@@ -98,8 +93,9 @@ class Game
     destroyElements: ->
         for b in @toDestroy
             data = b.GetUserData()
-            @incrementScore()
             @world.DestroyBody b
+        @score += @toDestroy.length
+        @_updateScore()
         @toDestroy = []
 
     animateWorld: ->

@@ -100,10 +100,6 @@ Game = (function() {
       body = body.GetNext();
     }
   };
-  Game.prototype.incrementScore = function() {
-    this.score++;
-    return this._updateScore();
-  };
   Game.prototype.incrementSpeed = function() {
     this.speed++;
     return this._updateSpeed();
@@ -120,9 +116,10 @@ Game = (function() {
     for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
       b = _ref3[_i];
       data = b.GetUserData();
-      this.incrementScore();
       this.world.DestroyBody(b);
     }
+    this.score += this.toDestroy.length;
+    this._updateScore();
     return this.toDestroy = [];
   };
   Game.prototype.animateWorld = function() {
