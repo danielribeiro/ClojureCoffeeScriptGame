@@ -164,10 +164,8 @@
       (do
         (atom-set game :ticks-to-speed speed-rate)
         (increment-speed game)
-        (p "incrementing")
         )
       (atom-set game :ticks-to-speed (dec missing-ticks)))
-    (p "now its tics are :" (@game :ticks-to-speed))
     (maybe-create-element game)
     (.Step w (/ 1 30) 10 10)
     (. w (DrawDebugData))
@@ -260,6 +258,38 @@
       )
     ))
 
+(defn add-to-destroy [game body]
+  (atom-set game :to-destroy (conj (@game :to-destroy) body))
+  )
+
+(defn- static? [fixture]
+  (= (.. fixture (GetBody) (GetType))
+    (.b2_staticBody b2Body)))
+
+(defn- not-has-point? [fixture vec]
+  (let [shape (. fixture (GetShape))
+        transform (.. fixture (GetBody) (GetTransform))]
+    (not (.TestPoint shape transform vec))
+    ))
+
+(defn delete-at [game x y]
+  (let [mouse-vec (v x y)
+        aabb (b2AABB.)
+        delta 0.001
+        callback (fn [f]
+      (if (or (static? f) (not-has-point? f mouse-vec)) true
+        (do (add-to-destroy game (. f (GetBody))) false)))
+        ]
+    (-> (.lowerBound aabb) (.Set (- x delta) (- y delta)))
+    (-> (.upperBound aabb) (.Set (+ x delta) (+ y delta)))
+    (-> (@game :world) (.QueryAABB callback aabb))
+    )
+  )
+
+(defn on-click [game x y]
+  (if (not-paused? game)
+    (delete-at game (/ x scale) (/ y scale))))
+
 (defn- update-pause-text [game]
   (-> (dom :pause)
     (.text (if (@game :paused) "Unpause" "Pause")
@@ -276,6 +306,12 @@
 (defn init-web-app []
   (let [game (create-game (get-canvas))]
     (-> (dom :pause) (.click #(toggle-pause game)))
+    (-> (dom :canvas) (.mousedown
+                        (fn [e]
+                          (let [o (. (dom :canvas) (offset))]
+                            (on-click game (- (.pageX e) (.left o)) (- (.pageY e) (.top o)))
+                            false
+                            ))))
     (build-walls game)
     (animate-world game)
     ))

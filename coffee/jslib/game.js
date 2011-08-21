@@ -234,11 +234,12 @@ Game = (function() {
     return this.create(bodyDef, fixDef);
   };
   Game.prototype.getBodyAt = function(x, y) {
-    var aabb, callback, mousePVec, selectedBody;
+    var aabb, callback, delta, mousePVec, selectedBody;
     mousePVec = v(x, y);
     aabb = new b2AABB();
-    aabb.lowerBound.Set(x - 0.001, y - 0.001);
-    aabb.upperBound.Set(x + 0.001, y + 0.001);
+    delta = 0.001;
+    aabb.lowerBound.Set(x - delta, y - delta);
+    aabb.upperBound.Set(x + delta, y + delta);
     selectedBody = null;
     callback = function(f) {
       if (f.GetBody().GetType() === b2Body.b2_staticBody) {

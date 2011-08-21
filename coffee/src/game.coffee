@@ -197,8 +197,9 @@ class Game
     getBodyAt: (x, y)->
         mousePVec = v(x, y)
         aabb = new b2AABB()
-        aabb.lowerBound.Set(x - 0.001, y - 0.001)
-        aabb.upperBound.Set(x + 0.001, y + 0.001)
+        delta = 0.001
+        aabb.lowerBound.Set(x - delta, y - delta)
+        aabb.upperBound.Set(x + delta, y + delta)
         selectedBody = null
         callback = (f) ->
             return true if f.GetBody().GetType() == b2Body.b2_staticBody
