@@ -87,7 +87,7 @@ class Game
         @speed++
         @_updateSpeed()
 
-    _updateScore: -> $('#scoreValue').text(@score)
+    _updateScore: -> $('#scoreValue').text @score
     _updateSpeed: -> $('#speedValue').text(@speed).hide().slideDown()
 
     destroyElements: ->
@@ -99,7 +99,7 @@ class Game
         @toDestroy = []
 
     animateWorld: ->
-        debugDraw = new b2DebugDraw()
+        debugDraw = new b2DebugDraw
         debugDraw.SetSprite @canvas.getContext "2d"
         debugDraw.SetDrawScale @scale
         debugDraw.SetLineThickness 1.0
@@ -118,12 +118,12 @@ class Game
             @incrementSpeed()
         @destroyElements()
         @maybeCreateElement()
-        @world.Step(1 / 30, 10, 10)
+        @world.Step 1 / 30, 10, 10
         @world.DrawDebugData()
         @world.ClearForces()
 
     maybeCreateElement: ->
-        negProbability = 0.97 * Math.pow(0.95, @speed)
+        negProbability = 0.97 * Math.pow 0.95, @speed
         return unless Math.random() > negProbability
         @createElement()
 
@@ -149,18 +149,18 @@ class Game
         @create bodyDef, fixDef
 
     createSquare: (x, y, size) ->
-        fixDef = createFixture new b2PolygonShape()
+        fixDef = createFixture new b2PolygonShape
         bodyDef = @randomBody x, y
         fixDef.shape.SetAsBox size, size
         @create bodyDef, fixDef
 
     createCircle: (x, y, size) ->
-        f = createFixture new b2CircleShape(size)
+        f = createFixture new b2CircleShape size
         b = @randomBody x, y
         @create b, f
 
     buildWorld: ->
-        gravity = v(0, 10)
+        gravity = v 0, 10
         doSleep = off
         @world = new b2World gravity, doSleep
         @buildWalls()
@@ -177,29 +177,29 @@ class Game
         @wall [dim, h], [2 * w + dim, h]
 
     create: (body, fixture) ->
-        body = @world.CreateBody(body)
-        body.CreateFixture(fixture)
+        body = @world.CreateBody body
+        body.CreateFixture fixture
         return body
 
     wall: (dimensions, position, userData) ->
-        fixDef = createFixture(new b2PolygonShape())
+        fixDef = createFixture new b2PolygonShape
         fixDef.shape.SetAsBox dimensions...
-        bodyDef = createBody(position...)
+        bodyDef = createBody position...
         bodyDef.userData = userData
         bodyDef.type = b2Body.b2_staticBody
         @create bodyDef, fixDef
 
 
     getBodyAt: (x, y)->
-        mousePVec = v(x, y)
-        aabb = new b2AABB()
+        mousePVec = v x, y
+        aabb = new b2AABB
         delta = 0.001
-        aabb.lowerBound.Set(x - delta, y - delta)
-        aabb.upperBound.Set(x + delta, y + delta)
+        aabb.lowerBound.Set x - delta, y - delta
+        aabb.upperBound.Set x + delta, y + delta
         selectedBody = null
         callback = (f) ->
             return true if f.GetBody().GetType() == b2Body.b2_staticBody
-            return true unless f.GetShape().TestPoint(f.GetBody().GetTransform(), mousePVec)
+            return true unless f.GetShape().TestPoint f.GetBody().GetTransform(), mousePVec
             selectedBody = f.GetBody()
             return false
         @world.QueryAABB callback, aabb
@@ -207,7 +207,7 @@ class Game
 
 
     deleteAt: (x, y) ->
-        body = @getBodyAt(x, y)
+        body = @getBodyAt x, y
         return unless body?
         @toDestroy.push body
 
@@ -229,7 +229,7 @@ init_web_app = ->
     $('#restart').click -> game.restart()
     $('#canvas').mousedown (e) ->
         o = $(@).offset()
-        game.onClick(e.pageX - o.left, e.pageY - o.top)
+        game.onClick e.pageX - o.left, e.pageY - o.top
         return false
     puts game.world
     game.animateWorld()

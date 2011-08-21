@@ -124,7 +124,7 @@ Game = (function() {
   };
   Game.prototype.animateWorld = function() {
     var debugDraw;
-    debugDraw = new b2DebugDraw();
+    debugDraw = new b2DebugDraw;
     debugDraw.SetSprite(this.canvas.getContext("2d"));
     debugDraw.SetDrawScale(this.scale);
     debugDraw.SetLineThickness(1.0);
@@ -187,7 +187,7 @@ Game = (function() {
   };
   Game.prototype.createSquare = function(x, y, size) {
     var bodyDef, fixDef;
-    fixDef = createFixture(new b2PolygonShape());
+    fixDef = createFixture(new b2PolygonShape);
     bodyDef = this.randomBody(x, y);
     fixDef.shape.SetAsBox(size, size);
     return this.create(bodyDef, fixDef);
@@ -223,7 +223,7 @@ Game = (function() {
   };
   Game.prototype.wall = function(dimensions, position, userData) {
     var bodyDef, fixDef, _ref3;
-    fixDef = createFixture(new b2PolygonShape());
+    fixDef = createFixture(new b2PolygonShape);
     (_ref3 = fixDef.shape).SetAsBox.apply(_ref3, dimensions);
     bodyDef = createBody.apply(null, position);
     bodyDef.userData = userData;
@@ -233,7 +233,7 @@ Game = (function() {
   Game.prototype.getBodyAt = function(x, y) {
     var aabb, callback, delta, mousePVec, selectedBody;
     mousePVec = v(x, y);
-    aabb = new b2AABB();
+    aabb = new b2AABB;
     delta = 0.001;
     aabb.lowerBound.Set(x - delta, y - delta);
     aabb.upperBound.Set(x + delta, y + delta);
