@@ -41,13 +41,19 @@
     )
   )
 
-(def p js/puts)
+(defn atom-set
+  "Helper function for setting an atom of a map"
+  [atom & values]
+  (swap! atom #(apply assoc % values))
+  )
 
-;(defn alertall [& args]
-;  (doseq [x args] (js/alert x)))
+(def)
+
+(def p js/puts)
 (def W)
 (def H)
 (def scale 30)
+(def speed-rate 300)
 
 (defn get-canvas []
   (let [canvas (dom :canvas)]
@@ -61,14 +67,36 @@
   (let [gravity (v 0 10)
         doSleep false
         twiceScale (* 2 scale)]
-    {:center-x (/ W twiceScale)
-     :center-y (/ H twiceScale)
-     :world (b2World. gravity doSleep)
-     :canvas canvas
-     }
+    (init (atom
+      {:center-x (/ W twiceScale)
+       :center-y (/ H twiceScale)
+       :world (b2World. gravity doSleep)
+       :canvas canvas
+       }
+
+      ))
     ))
 
-;  (set! (. f density) 3) is uly
+(defn init [game]
+  (atom-set game
+    :to-destroy []
+    :paused false
+    :game-over false
+    :score 0
+    :speed 0
+    :ticks-to-speed speed-rate
+
+    )
+  )
+
+(defn add-methods [game-ref]
+  (assoc game-ref
+    :create-circle create-circle
+    )
+  )
+
+
+;  (set! (. f density) 3) is ugly. Lack of macros/eval make this impossible to solve without native javascript
 (defn create-fixture
   ([shape] (js-set (b2FixtureDef.)
              :density 3
@@ -81,13 +109,13 @@
 
 (defn create-body [x y]
   (let [b (b2BodyDef.)]
-    (js-set :type (.b2_dynamicBody b2Body))
+    (js-set b :type (.b2_dynamicBody b2Body))
     (-> (.position b) (.Set x y))
     b
     ))
 
 (defn create [game body-def fix-def]
-  (let [body (-> (:world game) (.CreateBody body-def))]
+  (let [body (-> (@game :world) (.CreateBody body-def))]
     (.CreateFixture body fix-def)
     body
     )
@@ -107,8 +135,8 @@
 
 
 (defn build-walls [game]
-  (let [w (:center-x game)
-        h (:center-y game)
+  (let [w (@game :center-x)
+        h (@game :center-y)
         dim (/ 200 scale)]
     (wall game w dim w (- dim) :ceiling)
     (wall game w dim w (+ dim (* 2 h)))
@@ -117,9 +145,36 @@
     )
   )
 
+(defn random-body [x y]
+  (let [b (create-body x y)
+        vx (- (* 10 (rand)) 5)]
+    (js-set b :angle (* 360 (rand))
+      :linearVelocity (v vx 0)
+      :angularVelocity (- (* 4 (rand)) 2)
+      )
+    ))
+
+(defn create-circle [game x y size]
+  (create game (random-body x y) (create-fixture (b2CircleShape. size)))
+  )
+
+(defn create-element [game]
+  (let [randomY (/ (* H (+ 0.2 (* 0.4 (rand)))) scale)
+        randomX (/ (+ 25 (* (rand) (- W 50))) scale)]
+    (create-circle game randomX randomY (inc (rand)))
+    )
+  )
+
+(defn maybe-create-element [game]
+  (let [neg-probability (* 0.97 (Math/pow 0.95, (@game :speed)))]
+    (if (> (rand) neg-probability) (create-element game))
+    )
+  )
+
 (defn tick [game]
-  (let [w (game :world)]
-    (.Step w 1 (/ 1 30) 10 10)
+  (let [w (@game :world)]
+    (maybe-create-element game)
+    (.Step w (/ 1 30) 10 10)
     (. w (DrawDebugData))
     (. w (ClearForces))
     ))
@@ -127,14 +182,15 @@
 (defn animate-world [game]
   (let [debug-draw (b2DebugDraw.)]
     (doto debug-draw
-      (.SetSprite (-> (game :canvas) (.getContext "2d")))
+      (.SetSprite (-> (@game :canvas) (.getContext "2d")))
       (.SetDrawScale scale)
       (.SetLineThickness 1.0)
       (.SetFlags (.e_shapeBit b2DebugDraw))
       )
-    (-> (game :world) (.SetDebugDraw debug-draw))
+    (-> (@game :world) (.SetDebugDraw debug-draw))
     (js/setInterval #(tick game) (/ 1000 30))
     ))
+
 
 (defn init-web-app []
   (let [game (create-game (get-canvas))]
@@ -143,3 +199,8 @@
     ))
 
 (jquery init-web-app)
+
+(defn redfn [r [k v]]
+  (assoc r k (apply f v args))
+  )
+

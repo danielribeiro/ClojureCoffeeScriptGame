@@ -15,3 +15,6 @@ db
 /clojure/clojure.iml
 /clojure/lib/clojure.jar
 .idea
+
+# Bad closurescript and its random names
+/clojure/out/
