@@ -17,4 +17,4 @@ db
 .idea
 
 # Bad closurescript and its random names
-/clojure/out/
+/clojure/out/*
