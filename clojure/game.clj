@@ -14,10 +14,16 @@
 (defn v [x y] (js/Box2D.Common.Math.b2Vec2. x y))
 (defn dom [s] (->> (name s) (str "#") jquery))
 
-; Using set! is really verbose, and doesn't accept anything other than bare symbols
+; Using set! is really verbose and doesn't accept anything other than bare symbols
 (def nativejsset (js* "function (o, key ,val) {
    o[key] = val;
 }"))
+
+; Needed for triangle vertices
+(defn nativearray [& args]
+  (let [ret (js/Array.)]
+    (doseq [arg args] (.push ret arg))
+    ret))
 
 (defn native-set-wrapper [jsobject attr value]
   (nativejsset jsobject (name attr) value)
@@ -50,13 +56,12 @@
     )
   )
 
-
-(def p js/puts)
 (def W)
 (def H)
 (def scale 30)
 (def speed-rate 300)
 (def empty-fn (constantly nil))
+
 
 (defn get-canvas []
   (let [canvas (dom :canvas)]
@@ -65,10 +70,6 @@
     (.get canvas 0)
     )
   )
-
-
-
-
 ;  (set! (. f density) 3) is ugly. Lack of macros/eval make this impossible to solve without native javascript
 (defn create-fixture
   ([shape] (js-set (b2FixtureDef.)
@@ -104,8 +105,8 @@
         :userData user-data
         :type (.b2_staticBody b2Body))
       (create game body-def fix-def))
-    ))
-
+    )
+  )
 
 (defn build-walls [game]
   (let [w (@game :center-x)
@@ -125,10 +126,23 @@
       :linearVelocity (v vx 0)
       :angularVelocity (- (* 4 (rand)) 2)
       )
-    ))
+    )
+  )
 
 (defn create-circle [game x y size]
-  (create game (random-body x y) (create-fixture (b2CircleShape. size)))
+  (create game (random-body x y) (create-fixture (b2CircleShape. size))))
+
+(defn create-square [game x y size]
+  (let [fixture (create-fixture (b2PolygonShape.))]
+    (.SetAsBox (.shape fixture) size size)
+    (create game (random-body x y) fixture))
+  )
+
+(defn create-triangle [game x y size]
+  (let [fixture (create-fixture (b2PolygonShape.))
+        vertices (nativearray (v (- size) 0) (v size 0) (v 0 (* size (Math/sqrt 3))))]
+    (.SetAsArray (.shape fixture) vertices)
+    (create game (random-body x y) fixture))
   )
 
 (defn- paused? [game] (@game :paused))
@@ -138,13 +152,15 @@
 
 (defn create-element [game]
   (let [randomY (/ (* H (+ 0.2 (* 0.4 (rand)))) scale)
-        randomX (/ (+ 25 (* (rand) (- W 50))) scale)]
-    (create-circle game randomX randomY (inc (rand)))
+        randomX (/ (+ 25 (* (rand) (- W 50))) scale)
+        type (rand-nth [:circle :square :triangle])
+        method (keyword (str "create-" (name type)))]
+    ((@game method) game randomX randomY (inc (rand)))
     )
   )
 
 (defn maybe-create-element [game]
-  (let [neg-probability (* 0.97 (Math/pow 0.95, (@game :speed)))]
+  (let [neg-probability (* 0.97 (Math/pow 0.95 (@game :speed)))]
     (if (> (rand) neg-probability) (create-element game))
     )
   )
@@ -163,8 +179,7 @@
   (do
     (atom-set game :speed (inc (@game :speed)))
     (update-speed game)
-    )
-  )
+    ))
 
 (defn destroy-elements [game]
   (let [to-destroy (@game :to-destroy)
@@ -173,7 +188,8 @@
     (doseq [b to-destroy] (-> (@game :world) (.DestroyBody b)))
     (atom-set game :to-destroy [], :score new-score)
     (update-score game)
-    ))
+    )
+  )
 
 (defn- do-tick [game]
   (let [w (@game :world)
@@ -197,8 +213,7 @@
     (do (set-paused game true)
       (. (dom :gameOver) (fadeIn)))
     (if (not-paused? game) (do-tick game))
-    )
-  )
+    ))
 
 (defn animate-world [game]
   (let [debug-draw (b2DebugDraw.)]
@@ -218,6 +233,8 @@
 (defn add-methods [game-ref]
   (assoc game-ref
     :create-circle create-circle
+    :create-square create-square
+    :create-triangle create-triangle
     )
   )
 
@@ -231,8 +248,7 @@
       :score 0
       :speed 0
       :ticks-to-speed speed-rate
-      )
-    )
+      ))
   )
 
 (defn pre-solve [game contact manifold]
@@ -250,15 +266,13 @@
     :BeginContact empty-fn
     :EndContact empty-fn
     :PreSolve #(pre-solve game %1 %2)
-    )
-  )
+    ))
 
 (defn set-contact-listener [game]
   (do
     (.SetContactListener (@game :world) (contact-listener game))
     game
-    )
-  )
+    ))
 
 (defn build-world []
   (let [gravity (v 0 10)
@@ -322,7 +336,6 @@
     (update-pause-text game)
     ))
 
-
 (defn iter-each-body [body func]
   (when body
     (func body)
@@ -342,6 +355,7 @@
   (do
     (cleanup-world game)
     (init game)
+    (. (dom :gameOver) (hide))
     (update-score game)
     (update-speed game)
     (update-pause-text game)
@@ -363,4 +377,3 @@
     ))
 
 (jquery init-web-app)
-
