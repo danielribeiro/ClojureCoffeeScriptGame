@@ -14,13 +14,14 @@ v = (x, y) -> new b2Vec2(x, y)
 
 randomInt = (a) -> Math.floor Math.random() * a
 
+assoc = (o, i) -> o[k] = v for k, v of i; o
+
 createFixture = (shape) ->
-    f = new b2FixtureDef
-    f.density = 3.0
-    f.friction = .3
-    f.restitution = .9
-    f.shape = shape if shape?
-    return f
+    assoc new b2FixtureDef,
+        density: 3
+        friction: .3
+        restitution: .9
+        shape: shape
 
 createBody = (x, y) ->
     b = new b2BodyDef

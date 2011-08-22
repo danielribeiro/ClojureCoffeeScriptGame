@@ -11,8 +11,8 @@
 (def b2PolygonShape js/Box2D.Collision.Shapes.b2PolygonShape)
 (def b2CircleShape js/Box2D.Collision.Shapes.b2CircleShape)
 
-(defn v [x y] (js/Box2D.Common.Math.b2Vec2. x y))
-(defn dom [s] (->> (name s) (str "#") jquery))
+(defn- v [x y] (js/Box2D.Common.Math.b2Vec2. x y))
+(defn- dom [s] (->> (name s) (str "#") jquery))
 
 ; Using set! is really verbose and doesn't accept anything other than bare symbols
 (def nativejsset (js* "function (o, key ,val) {
@@ -20,15 +20,15 @@
 }"))
 
 ; Needed for triangle vertices
-(defn nativearray [& args]
+(defn- nativearray [& args]
   (let [ret (js/Array.)]
     (doseq [arg args] (.push ret arg))
     ret))
 
-(defn native-set-wrapper [jsobject attr value]
+(defn- native-set-wrapper [jsobject attr value]
   (nativejsset jsobject (name attr) value)
   )
-(defn js-set
+(defn- js-set
   "Sets an attribute name to a value on a javascript object
   Returns the original object"
   ([jsobject attr value]
@@ -47,7 +47,7 @@
     )
   )
 
-(defn atom-set
+(defn- atom-set
   "Helper function for setting an atom of a map"
   [atom & values]
   (do
@@ -63,7 +63,7 @@
 (def empty-fn (constantly nil))
 
 
-(defn get-canvas []
+(defn- get-canvas []
   (let [canvas (dom :canvas)]
     (def W (. canvas (width)))
     (def H (. canvas (height)))
@@ -71,7 +71,7 @@
     )
   )
 ;  (set! (. f density) 3) is ugly. Lack of macros/eval make this impossible to solve without native javascript
-(defn create-fixture
+(defn- create-fixture
   ([shape] (js-set (b2FixtureDef.)
              :density 3
              :friction 0.3
@@ -81,21 +81,21 @@
   ([] (create-fixture nil))
   )
 
-(defn create-body [x y]
+(defn- create-body [x y]
   (let [b (b2BodyDef.)]
     (js-set b :type (.b2_dynamicBody b2Body))
     (-> (.position b) (.Set x y))
     b
     ))
 
-(defn create [game body-def fix-def]
+(defn- create [game body-def fix-def]
   (let [body (-> (@game :world) (.CreateBody body-def))]
     (.CreateFixture body fix-def)
     body
     )
   )
 
-(defn wall
+(defn- wall
   ([game width height x y] (wall game width height x y nil))
   ([game width height x y user-data]
     (let [fix-def (create-fixture (b2PolygonShape.))
@@ -108,7 +108,7 @@
     )
   )
 
-(defn build-walls [game]
+(defn- build-walls [game]
   (let [w (@game :center-x)
         h (@game :center-y)
         dim (/ 200 scale)]
@@ -119,7 +119,7 @@
     )
   )
 
-(defn random-body [x y]
+(defn- random-body [x y]
   (let [b (create-body x y)
         vx (- (* 10 (rand)) 5)]
     (js-set b :angle (* 360 (rand))
@@ -129,16 +129,16 @@
     )
   )
 
-(defn create-circle [game x y size]
+(defn- create-circle [game x y size]
   (create game (random-body x y) (create-fixture (b2CircleShape. size))))
 
-(defn create-square [game x y size]
+(defn- create-square [game x y size]
   (let [fixture (create-fixture (b2PolygonShape.))]
     (.SetAsBox (.shape fixture) size size)
     (create game (random-body x y) fixture))
   )
 
-(defn create-triangle [game x y size]
+(defn-  create-triangle [game x y size]
   (let [fixture (create-fixture (b2PolygonShape.))
         vertices (nativearray (v (- size) 0) (v size 0) (v 0 (* size (Math/sqrt 3))))]
     (.SetAsArray (.shape fixture) vertices)
@@ -150,7 +150,7 @@
 (defn- set-paused [game val] (atom-set game :paused val))
 
 
-(defn create-element [game]
+(defn- create-element [game]
   (let [randomY (/ (* H (+ 0.2 (* 0.4 (rand)))) scale)
         randomX (/ (+ 25 (* (rand) (- W 50))) scale)
         type (rand-nth [:circle :square :triangle])
@@ -159,29 +159,29 @@
     )
   )
 
-(defn maybe-create-element [game]
+(defn- maybe-create-element [game]
   (let [neg-probability (* 0.97 (Math/pow 0.95 (@game :speed)))]
     (if (> (rand) neg-probability) (create-element game))
     )
   )
 
-(defn update-speed [game]
+(defn- update-speed [game]
   (let [domspeed (dom :speedValue)]
     (.text domspeed (@game :speed))
     (.. domspeed (hide) (slideDown))
     )
   )
 
-(defn update-score [game]
+(defn- update-score [game]
   (-> (dom :scoreValue) (.text (@game :score))))
 
-(defn increment-speed [game]
+(defn- increment-speed [game]
   (do
     (atom-set game :speed (inc (@game :speed)))
     (update-speed game)
     ))
 
-(defn destroy-elements [game]
+(defn- destroy-elements [game]
   (let [to-destroy (@game :to-destroy)
         new-score (+ (@game :score) (count to-destroy))
         ]
@@ -208,14 +208,14 @@
     )
   )
 
-(defn tick [game]
+(defn- tick [game]
   (if (and (@game :game-over) (not-paused? game))
     (do (set-paused game true)
       (. (dom :gameOver) (fadeIn)))
     (if (not-paused? game) (do-tick game))
     ))
 
-(defn animate-world [game]
+(defn- animate-world [game]
   (let [debug-draw (b2DebugDraw.)]
     (doto debug-draw
       (.SetSprite (-> (@game :canvas) (.getContext "2d")))
@@ -230,7 +230,7 @@
 
 ; Resolve doesn't work on clojurescript. Therefore, if we want to get a function from a string, we
 ; have to make the lookup ourselves.
-(defn add-methods [game-ref]
+(defn- add-methods [game-ref]
   (assoc game-ref
     :create-circle create-circle
     :create-square create-square
@@ -238,7 +238,7 @@
     )
   )
 
-(defn init [game]
+(defn- init [game]
   (do
     (dotimes [_ 5] (create-element game))
     (atom-set game
@@ -251,7 +251,7 @@
       ))
   )
 
-(defn pre-solve [game contact manifold]
+(defn- pre-solve [game contact manifold]
   (if (. contact (IsTouching))
     (let [data-x (.. contact (GetFixtureA) (GetBody) (GetUserData))
           data-y (.. contact (GetFixtureB) (GetBody) (GetUserData))]
@@ -260,7 +260,7 @@
         )))
   )
 
-(defn contact-listener [game]
+(defn- contact-listener [game]
   (js-set (js/Object.)
     :PostSolve empty-fn
     :BeginContact empty-fn
@@ -268,13 +268,13 @@
     :PreSolve #(pre-solve game %1 %2)
     ))
 
-(defn set-contact-listener [game]
+(defn- set-contact-listener [game]
   (do
     (.SetContactListener (@game :world) (contact-listener game))
     game
     ))
 
-(defn build-world []
+(defn- build-world []
   (let [gravity (v 0 10)
         doSleep false
         world (b2World. gravity doSleep)]
@@ -282,7 +282,7 @@
     )
   )
 
-(defn create-game [canvas]
+(defn- create-game [canvas]
   (let [twiceScale (* 2 scale)]
     (-> {:center-x (/ W twiceScale)
          :center-y (/ H twiceScale)
@@ -308,7 +308,7 @@
     (not (.TestPoint shape transform vec))
     ))
 
-(defn delete-at [game x y]
+(defn- delete-at [game x y]
   (let [mouse-vec (v x y)
         aabb (b2AABB.)
         delta 0.001
@@ -321,7 +321,7 @@
     )
   )
 
-(defn on-click [game x y]
+(defn- on-click [game x y]
   (if (not-paused? game)
     (delete-at game (/ x scale) (/ y scale))))
 
@@ -330,13 +330,13 @@
     (.text (if (@game :paused) "Unpause" "Pause")
       )))
 
-(defn toggle-pause [game]
+(defn- toggle-pause [game]
   (when-not (:game-over @game)
     (set-paused game (not-paused? game))
     (update-pause-text game)
     ))
 
-(defn iter-each-body [body func]
+(defn- iter-each-body [body func]
   (when body
     (func body)
     (iter-each-body (. body (GetNext)) func)
@@ -346,12 +346,12 @@
   (iter-each-body (. (@game :world) (GetBodyList)) func)
   )
 
-(defn cleanup-world [game]
+(defn- cleanup-world [game]
   (each-body game
     #(when-not (static-body? %) (.DestroyBody (@game :world) %)))
   )
 
-(defn restart [game]
+(defn- restart [game]
   (do
     (cleanup-world game)
     (init game)

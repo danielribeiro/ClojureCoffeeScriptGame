@@ -1,4 +1,4 @@
-var ContactListenerHandler, Game, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, randomInt, v, _ref, _ref2;
+var ContactListenerHandler, Game, assoc, b2AABB, b2Body, b2BodyDef, b2CircleShape, b2DebugDraw, b2Fixture, b2FixtureDef, b2PolygonShape, b2Vec2, b2World, createBody, createFixture, getCanvas, global, init_web_app, randomInt, v, _ref, _ref2;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 global = window;
 b2Vec2 = Box2D.Common.Math.b2Vec2;
@@ -18,16 +18,21 @@ v = function(x, y) {
 randomInt = function(a) {
   return Math.floor(Math.random() * a);
 };
-createFixture = function(shape) {
-  var f;
-  f = new b2FixtureDef;
-  f.density = 3.0;
-  f.friction = .3;
-  f.restitution = .9;
-  if (shape != null) {
-    f.shape = shape;
+assoc = function(o, i) {
+  var k, v;
+  for (k in i) {
+    v = i[k];
+    o[k] = v;
   }
-  return f;
+  return o;
+};
+createFixture = function(shape) {
+  return assoc(new b2FixtureDef, {
+    density: 3,
+    friction: .3,
+    restitution: .9,
+    shape: shape
+  });
 };
 createBody = function(x, y) {
   var b;
