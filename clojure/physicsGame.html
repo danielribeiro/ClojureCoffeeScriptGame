@@ -5,7 +5,7 @@
         <style type="text/css">
             body {
                 font-family: Helvetica Neue, Arial, Lucida Grande, sans-serif;
-                font-size: 13px;
+                font-size: 18px;
                 line-height: 1.3;
             }
             /* green */
@@ -64,7 +64,7 @@
                 background-color: lightslategray;
                 cursor: default;
             }
-            #content {
+            .content {
                 padding: 20px 100px;
             }
             #buttons {
@@ -113,7 +113,8 @@
         <script type="text/javascript">goog.require('physicsGame');</script>
     </head>
     <body>
-        <div id="content">
+        <a href="http://github.com/danielribeiro/ClojureCoffeeScriptGame"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+        <div class="content">
             <canvas id="canvas" width="800" height="600"></canvas>
             <div id="gameOver" style="display: none;">Game Over</div>
             <div id="buttons">
@@ -122,6 +123,10 @@
                 <span id="speed">Speed: <span id="speedValue">0</span></span>
                 <span id="score">Score: <span id="scoreValue">0</span></span>
             </div>
+        </div>
+        <div class="content">
+            <a href="../index.html">
+                <img src="./coffeescripticon.png" width="18"/>CoffeeScript Version</a>
         </div>
     </body>
 </html>
