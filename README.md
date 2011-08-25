@@ -9,7 +9,7 @@ CoffeeScript Version
 ----
 It can be found on coffee folder, and it requires CoffeeScript 1.12. Compiling all coffee files can be done with:
 
-   $ coffee -wcbo jslib/ src/
+       $ coffee -wcbo jslib/ src/
 
 Or you can run it with [compile.sh](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/coffee/compile.sh).
 
@@ -20,11 +20,11 @@ ClojureScript Version
 ----
 It is located on clojure folder, and it requires the latest version of ClojureScript (it is still unversioned, so using the one from [2011-08-11](https://github.com/clojure/clojurescript/commits/master) should be fine). Compiling all coffee files can be done with:
 
-   $ cljsc game.clj '{:pretty-print true}' > game.js
+      $ cljsc game.clj '{:pretty-print true}' > game.js
 
-This can also be compiled with [compile.sh](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/clojure/compile.sh). Unlike CoffeeScript's version, this doesn't watch the clojure files for changes.
+This script is included in [compile.sh](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/clojure/compile.sh). Unlike CoffeeScript's version, this won't watch the clojure files for changes.
 
-The included [clojure/physicsGame.html](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/clojure/physicsGame.html) can be run directly, and imports everything using relative paths. Unlike CoffeeScript version, you need to compile it before running. This is because ClojureScript's out folder is filled with randomly named files, which make them quite messy to track using a SCM.
+The included [clojure/physicsGame.html](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/clojure/physicsGame.html) can be opened directly, and imports everything using relative paths. Unlike CoffeeScript version, you need to compile it before running. This is because ClojureScript's out folder is filled with files whose names are randomly changed after each compilation, which make them quite messy to track using a SCM.
 
 Meta
 ----
