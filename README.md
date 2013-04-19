@@ -5,6 +5,7 @@ Simple click and kill game implemented in both [ClojureScript](https://github.co
 
 Demo can be played [here](http://danielribeiro.github.com/ClojureCoffeeScriptGame/)
 
+
 CoffeeScript Version
 ----
 It can be found on coffee folder, and it requires CoffeeScript 1.12. Compiling all coffee files can be done with:
@@ -25,6 +26,8 @@ It is located on clojure folder, and it requires the latest version of ClojureSc
 This script is included in [compile.sh](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/clojure/compile.sh). Unlike CoffeeScript's version, this won't watch the clojure files for changes.
 
 The included [clojure/physicsGame.html](https://github.com/danielribeiro/ClojureCoffeeScriptGame/blob/master/clojure/physicsGame.html) can be opened directly, and imports everything using relative paths. Unlike CoffeeScript version, you need to compile it before running. This is because ClojureScript's out folder is filled with files whose names are randomly changed after each compilation, which make them quite messy to track using a SCM.
+
+*Note:* does not work on latest version of ClojureScript (mostly due to the change in access to variables), as this was writen a few weeks after ClojureScript was released.
 
 Meta
 ----
