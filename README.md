@@ -5,7 +5,7 @@ Simple click and kill game implemented in both [ClojureScript](https://github.co
 
 Demo can be played [here](http://danielribeiro.github.com/ClojureCoffeeScriptGame/)
 
-![](http://metaphysicaldeveloper.files.wordpress.com/2011/08/game.png?w=455&h=396)
+[![](http://metaphysicaldeveloper.files.wordpress.com/2011/08/game.png?w=455&h=396)](http://danielribeiro.github.io/ClojureCoffeeScriptGame/)
 
 
 CoffeeScript Version
